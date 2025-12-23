@@ -1,0 +1,44 @@
+# OptiMetrics - Hardware Metrics Collection Tool
+# Python 3.9+ required
+
+# Core dependencies
+psutil>=5.9.0              # System and process utilities
+GPUtil>=1.4.0              # NVIDIA GPU utilities (wrapper)
+pynvml>=11.5.0             # NVIDIA Management Library bindings
+
+# Windows-specific (optional for Linux/macOS)
+pywin32>=306; sys_platform == 'win32'  # Windows API access
+wmi>=1.5.1; sys_platform == 'win32'    # Windows Management Instrumentation
+
+# Cross-platform hardware info
+py-cpuinfo>=9.0.0          # CPU information
+platformdirs>=4.0.0        # Platform-specific directories
+
+# Cloud storage integration
+google-api-python-client>=2.100.0   # Google Drive API
+google-auth-httplib2>=0.1.0         # Google authentication
+google-auth-oauthlib>=1.1.0         # OAuth for Google services
+
+# Security and encryption
+cryptography>=41.0.0       # Encryption for cloud uploads
+pycryptodome>=3.19.0       # Additional crypto utilities
+
+# Data handling
+pandas>=2.0.0              # Data manipulation (optional, for analysis)
+
+# Scheduling and background tasks
+schedule>=1.2.0            # Task scheduling
+
+# Logging and monitoring
+colorama>=0.4.6            # Colored terminal output
+
+# Optional: AMD GPU support (requires manual ROCm installation)
+# pyamdgpuinfo  # Uncomment if AMD GPU support needed
+
+# Optional: Intel GPU support
+# intel-extension-for-pytorch  # For Intel Arc GPUs
+
+# Development dependencies (optional)
+# pytest>=7.0.0
+# black>=23.0.0
+# ruff>=0.1.0

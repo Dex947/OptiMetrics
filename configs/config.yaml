@@ -1,0 +1,149 @@
+# OptiMetrics Configuration File
+# ================================
+# This file controls the behavior of the hardware metrics collection tool.
+# Modify settings as needed for your use case.
+
+# General Settings
+general:
+  # Logging frequency in seconds (minimum: 1, recommended: 1-5)
+  logging_interval: 1
+  
+  # Enable/disable specific metric categories
+  collect_cpu: true
+  collect_gpu: true
+  collect_ram: true
+  collect_disk: true
+  collect_network: true
+  collect_power: true
+  
+  # Session classification (automatic workload detection)
+  enable_session_classification: true
+  
+  # Auto-start logging on system boot (requires setup)
+  auto_start: false
+
+# Logging Settings
+logging:
+  # Directory for CSV log files (relative to project root or absolute path)
+  log_directory: "logs"
+  
+  # Rolling log file settings
+  rolling_logs: true
+  max_file_size_mb: 50
+  max_files_per_day: 10
+  
+  # Data filtering to reduce file size
+  # Only log when metrics change by more than threshold percentage
+  enable_delta_filtering: true
+  delta_threshold_percent: 2.0
+  
+  # Compression for older log files
+  compress_old_logs: true
+  compress_after_days: 1
+
+# Hardware ID Settings
+hardware_id:
+  # Use cryptographic hash for anonymization
+  use_cryptographic_id: true
+  
+  # Hash algorithm (sha256, sha384, sha512)
+  hash_algorithm: "sha256"
+  
+  # Include in hardware ID generation
+  include_cpu: true
+  include_gpu: true
+  include_motherboard: true
+  include_ram: false  # RAM can be upgraded, may change ID
+
+# Cloud Upload Settings
+cloud:
+  # Enable cloud synchronization
+  enabled: false
+  
+  # Cloud provider: "gdrive", "onedrive", or "both"
+  provider: "gdrive"
+  
+  # Upload frequency in minutes
+  upload_interval_minutes: 60
+  
+  # Encrypt files before upload
+  encrypt_before_upload: true
+  
+  # Encryption settings
+  encryption:
+    algorithm: "AES-256-GCM"
+    # Key file path (will be generated if not exists)
+    key_file: "configs/encryption.key"
+  
+  # Google Drive settings
+  gdrive:
+    # Folder name in Google Drive
+    folder_name: "OptiMetrics_Logs"
+    # Credentials file path
+    credentials_file: "configs/gdrive_credentials.json"
+    # Token file path (auto-generated after auth)
+    token_file: "configs/gdrive_token.json"
+  
+  # OneDrive settings (optional)
+  onedrive:
+    folder_name: "OptiMetrics_Logs"
+    credentials_file: "configs/onedrive_credentials.json"
+
+# Session Classification Settings
+session_classification:
+  # Classification update interval in seconds
+  update_interval: 30
+  
+  # Minimum confidence threshold for classification (0.0 - 1.0)
+  confidence_threshold: 0.6
+  
+  # Categories to detect
+  categories:
+    - gaming
+    - ai_training
+    - cad_3d_modeling
+    - graphics_design
+    - video_editing
+    - coding_development
+    - document_editing
+    - web_browsing
+    - idle
+    - system_maintenance
+
+# Performance Settings
+performance:
+  # Use low-priority thread for logging
+  low_priority_mode: true
+  
+  # Maximum memory usage for buffering (MB)
+  max_buffer_memory_mb: 50
+  
+  # Batch write size (number of records before flush)
+  batch_write_size: 60
+  
+  # CPU affinity (pin to specific cores, empty for auto)
+  cpu_affinity: []
+
+# Privacy Settings
+privacy:
+  # Never collect any of the following
+  collect_process_names: false
+  collect_window_titles: false
+  collect_user_names: false
+  collect_file_paths: false
+  collect_network_addresses: false
+  
+  # Anonymize all identifiable hardware info
+  anonymize_hardware: true
+
+# Debug Settings
+debug:
+  # Enable verbose logging to console
+  verbose: false
+  
+  # Log level: DEBUG, INFO, WARNING, ERROR
+  log_level: "INFO"
+  
+  # Save debug logs to file
+  save_debug_logs: false
+  debug_log_file: "logs/debug.log"
