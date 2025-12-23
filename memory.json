@@ -1,0 +1,43 @@
+{
+  "project": "OptiMetrics",
+  "version": "1.0.0",
+  "description": "Open-source hardware metrics collection tool for Windows/Linux/macOS",
+  "goals": [
+    "Collect comprehensive hardware metrics (CPU, GPU, RAM, disk, network)",
+    "Privacy-focused design with cryptographic hardware IDs",
+    "Automatic session classification based on workload patterns",
+    "Efficient CSV logging with rolling daily files",
+    "Optional encrypted cloud sync to Google Drive"
+  ],
+  "architecture": {
+    "adapters": [
+      "CPUAdapter - Per-core utilization, frequency, temperature",
+      "NvidiaGPUAdapter - NVIDIA GPU metrics via pynvml",
+      "MemoryAdapter - RAM and swap usage",
+      "DiskAdapter - I/O statistics and usage",
+      "NetworkAdapter - Bandwidth and connection stats"
+    ],
+    "core_modules": [
+      "hardware_logger.py - Main logging orchestration",
+      "utils.py - Hardware detection, crypto ID, session classification, cloud upload"
+    ]
+  },
+  "privacy_guarantees": [
+    "No process names or window titles collected",
+    "No user names or personal data",
+    "No network addresses or file paths",
+    "Hardware IDs are SHA-256 hashes (irreversible)"
+  ],
+  "session_categories": [
+    "gaming", "ai_training", "cad_3d_modeling", "graphics_design",
+    "video_editing", "coding_development", "document_editing",
+    "web_browsing", "idle", "system_maintenance"
+  ],
+  "github": {
+    "repo": "https://github.com/Dex947/OptiMetrics",
+    "license": "Apache-2.0",
+    "discussion_issue": "https://github.com/Dex947/OptiMetrics/issues/1"
+  },
+  "created": "2024-12-23",
+  "status": "initial_release"
+}
