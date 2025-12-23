@@ -2,9 +2,43 @@
 
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 [![Python](https://img.shields.io/badge/Python-3.9%2B-green.svg)](https://www.python.org/)
-[![Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20Linux%20%7C%20macOS-lightgrey.svg)](https://github.com/yourusername/OptiMetrics)
+[![Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20Linux%20%7C%20macOS-lightgrey.svg)](https://github.com/Dex947/OptiMetrics)
 
-**OptiMetrics** is a fully open-source, privacy-focused hardware metrics collection tool for Windows (with optional Linux/macOS support). It automatically collects comprehensive hardware telemetry data for performance analysis, benchmarking, and system monitoring—without collecting any personal information.
+**OptiMetrics** is an open-source, privacy-focused hardware metrics collection tool that powers a **Hardware-Intent-Aware Execution Policy Layer**—a next-generation optimization system that adapts runtime behavior based on workload goals rather than assuming maximal resource usage.
+
+## The Vision: Intent-Aware Hardware Optimization
+
+Traditional optimization approaches focus on:
+- ❌ Shortest execution path
+- ❌ Maximum speed at all costs
+- ❌ Brute-force resource utilization
+
+**OptiMetrics enables a smarter approach:**
+- ✅ **Goal-Aware**: Optimize for latency, precision, stability, or throughput based on actual intent
+- ✅ **Hardware-Aware**: Understand real hardware capabilities and thermal/power constraints
+- ✅ **Use-Case-Specific**: Different workloads (gaming vs. AI training vs. CAD) need different optimization strategies
+- ✅ **Modular Architecture**: Clean separation allows targeted optimization without bloat
+
+### How It Works
+
+1. **Data Collection**: OptiMetrics collects hardware telemetry from diverse systems worldwide
+2. **Pattern Analysis**: Workload patterns are classified and correlated with hardware configurations
+3. **Policy Generation**: Machine learning models generate optimal execution policies
+4. **Adaptive Runtime**: The execution layer adjusts behavior based on detected workload goals
+
+### Why This Matters
+
+Instead of blindly maximizing CPU/GPU usage, the system learns:
+- When **latency** matters more than throughput (real-time applications)
+- When **precision** is critical (scientific computing, CAD)
+- When **stability** trumps speed (long-running processes)
+- When **power efficiency** is the priority (mobile, thermal-constrained)
+
+## Contributing Data
+
+By running OptiMetrics, you contribute anonymized hardware metrics that help build better optimization policies for everyone. Data is automatically uploaded to our research database incrementally.
+
+**Your contribution helps create software that truly understands hardware.**
 
 ## Features
 
@@ -26,21 +60,21 @@
   - Based purely on system metrics—no application monitoring
   - Configurable confidence thresholds
 
+- **Automatic Cloud Sync**
+  - Incremental upload to central research database
+  - AES-256 encryption for secure transfer
+  - Minimal bandwidth usage with delta compression
+
 - **Efficient Data Storage**
   - Per-second resolution logging
   - Rolling daily log files with size limits
   - Delta filtering to reduce file size (~5MB/hour)
   - Automatic compression of old logs
 
-- **Cloud Integration**
-  - Optional encrypted upload to Google Drive
-  - Secure transfer with AES-256 encryption
-  - Automatic sync scheduling
-
 - **Modular Architecture**
-  - Easy to extend with new hardware adapters
-  - Pluggable session classifiers
-  - Clean separation of concerns
+  - Clean separation of adapters, classifiers, and core logic
+  - Easy to extend with new hardware support
+  - No bloat—only load what you need
 
 ## Quick Start
 
@@ -48,7 +82,7 @@
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/OptiMetrics.git
+git clone https://github.com/Dex947/OptiMetrics.git
 cd OptiMetrics
 
 # Create virtual environment

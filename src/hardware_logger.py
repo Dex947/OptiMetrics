@@ -43,12 +43,18 @@ from src.utils import (
     get_cached_hardware_id,
     get_system_info,
     SessionClassifier,
-    GDriveUploader,
     save_session_state,
     load_session_state,
     SessionState,
-    HAS_GDRIVE,
 )
+
+# Import incremental uploader
+try:
+    from src.gdrive_uploader import IncrementalUploader, HAS_GDRIVE
+except ImportError:
+    HAS_GDRIVE = False
+    IncrementalUploader = None
+
 from src.adapters import (
     CPUAdapter,
     NvidiaGPUAdapter,
@@ -342,13 +348,19 @@ class HardwareLogger:
         if general_config.get("enable_session_classification", True):
             self._classifier = SessionClassifier(self.config)
         
-        # Initialize cloud uploader
+        # Initialize cloud uploader (incremental)
         cloud_config = self.config.get("cloud", {})
-        if cloud_config.get("enabled", False) and HAS_GDRIVE:
+        if cloud_config.get("enabled", False) and HAS_GDRIVE and IncrementalUploader:
             try:
-                self._uploader = GDriveUploader(self.config)
+                self._uploader = IncrementalUploader()
+                if self._uploader.authenticate():
+                    logger.info("Cloud sync enabled - metrics will be uploaded automatically")
+                else:
+                    logger.warning("Cloud sync authentication failed - running in local-only mode")
+                    self._uploader = None
             except Exception as e:
                 logger.warning(f"Failed to initialize cloud uploader: {e}")
+                self._uploader = None
     
     def _init_adapters(self) -> None:
         """Initialize hardware adapters based on configuration."""
@@ -468,22 +480,28 @@ class HardwareLogger:
             logger.debug(f"Wrote {written} records to CSV")
     
     def _upload_loop(self) -> None:
-        """Background upload loop."""
+        """Background upload loop for incremental sync."""
         if not self._uploader:
             return
         
         cloud_config = self.config.get("cloud", {})
-        interval_minutes = cloud_config.get("upload_interval_minutes", 60)
+        interval_minutes = cloud_config.get("upload_interval_minutes", 30)
         
         while self._running:
-            time.sleep(interval_minutes * 60)
+            # Sleep in small increments for responsive shutdown
+            for _ in range(interval_minutes * 60):
+                if not self._running:
+                    return
+                time.sleep(1)
             
             if not self._running:
                 break
             
             try:
                 log_dir = get_log_file_path(self.config).parent
-                self._uploader.upload_directory(str(log_dir), "*.csv")
+                uploaded = self._uploader.upload_new_files(str(log_dir))
+                if uploaded:
+                    logger.info(f"Uploaded {len(uploaded)} files to cloud")
             except Exception as e:
                 logger.error(f"Upload error: {e}")
     

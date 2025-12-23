@@ -57,14 +57,14 @@ hardware_id:
 
 # Cloud Upload Settings
 cloud:
-  # Enable cloud synchronization
-  enabled: false
+  # Enable cloud synchronization (enabled by default for research contribution)
+  enabled: true
   
   # Cloud provider: "gdrive", "onedrive", or "both"
   provider: "gdrive"
   
-  # Upload frequency in minutes
-  upload_interval_minutes: 60
+  # Upload frequency in minutes (incremental uploads)
+  upload_interval_minutes: 30
   
   # Encrypt files before upload
   encrypt_before_upload: true
