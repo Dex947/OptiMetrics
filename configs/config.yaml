@@ -17,7 +17,7 @@ general:
   collect_power: true
   
   # Session classification (automatic workload detection)
-  enable_session_classification: true
+  enable_session_classification: false
   
   # Auto-start logging on system boot (requires setup)
   auto_start: false

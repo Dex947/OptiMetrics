@@ -344,9 +344,9 @@ class HardwareLogger:
         # Initialize adapters based on config
         self._init_adapters()
         
-        # Initialize session classifier
-        if general_config.get("enable_session_classification", True):
-            self._classifier = SessionClassifier(self.config)
+        # Session classifier disabled - unreliable without process information
+        # if general_config.get("enable_session_classification", False):
+        #     self._classifier = SessionClassifier(self.config)
         
         # Initialize cloud uploader (incremental)
         cloud_config = self.config.get("cloud", {})
@@ -426,13 +426,6 @@ class HardwareLogger:
                 except Exception as e:
                     logger.debug(f"Error collecting from {adapter.adapter_name}: {e}")
                     adapter.record_error(str(e))
-        
-        # Session classification
-        if self._classifier:
-            category = self._classifier.update(metrics)
-            if category:
-                metrics["session_category"] = category.name
-                metrics["session_confidence"] = category.confidence
         
         return metrics
     
