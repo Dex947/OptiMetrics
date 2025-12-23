@@ -1,30 +1,21 @@
 """
 Google Drive Auto-Uploader for OptiMetrics
 
-This module handles automatic incremental uploads of collected metrics
-to a shared Google Drive folder for research data aggregation.
-
-Features:
-    - Incremental uploads (only new data)
-    - Automatic retry on failure
-    - Bandwidth-efficient compression
-    - Service account support for unattended operation
+Handles automatic incremental uploads of collected metrics to a shared
+Google Drive folder for research data aggregation.
 """
 
-import os
-import sys
 import json
 import gzip
 import shutil
 import logging
 import hashlib
 from pathlib import Path
-from datetime import datetime, timedelta
+from datetime import datetime
 from typing import Optional, Dict, Any, List
 import threading
 import time
 
-# Google Drive API imports
 try:
     from google.oauth2.credentials import Credentials
     from google.oauth2 import service_account
@@ -39,28 +30,14 @@ except ImportError:
 
 logger = logging.getLogger("optimetrics.gdrive")
 
-# Scopes required for Google Drive access
-SCOPES = [
-    "https://www.googleapis.com/auth/drive.file",
-    "https://www.googleapis.com/auth/drive"
-]
+SCOPES = ["https://www.googleapis.com/auth/drive.file"]
+SHARED_FOLDER_ID = "1KLCQmnhgXTraQvVs0I60iut9scDMCMxr"
 
 
 class IncrementalUploader:
-    """
-    Handles incremental uploads of metrics files to Google Drive.
-    
-    Tracks which files have been uploaded to avoid duplicates and
-    supports resumable uploads for large files.
-    """
+    """Handles incremental uploads of metrics files to Google Drive."""
     
     def __init__(self, config_path: Optional[str] = None):
-        """
-        Initialize the uploader.
-        
-        Args:
-            config_path: Path to gdrive_service_config.json
-        """
         if not HAS_GDRIVE:
             raise ImportError(
                 "Google Drive API not installed. "
@@ -68,33 +45,28 @@ class IncrementalUploader:
             )
         
         self.project_root = Path(__file__).parent.parent
-        
-        # Load configuration
-        if config_path is None:
-            config_path = self.project_root / "configs" / "gdrive_service_config.json"
-        
         self.config = self._load_config(config_path)
-        
-        # State tracking
         self._service = None
         self._upload_state_file = self.project_root / ".upload_state.json"
         self._upload_state = self._load_upload_state()
         self._lock = threading.Lock()
         self._running = False
     
-    def _load_config(self, config_path: Path) -> Dict[str, Any]:
+    def _load_config(self, config_path: Optional[str]) -> Dict[str, Any]:
         """Load uploader configuration."""
+        if config_path is None:
+            config_path = self.project_root / "configs" / "gdrive_service_config.json"
+        
         config_path = Path(config_path)
-        
         if config_path.exists():
-            with open(config_path, "r") as f:
-                return json.load(f)
+            try:
+                with open(config_path, "r", encoding="utf-8") as f:
+                    return json.load(f)
+            except (json.JSONDecodeError, IOError):
+                logger.warning(f"Failed to load config from {config_path}, using defaults")
         
-        # Default configuration
         return {
-            "research_folder_id": None,
-            "upload_mode": "incremental",
-            "batch_size_mb": 5,
+            "research_folder_id": SHARED_FOLDER_ID,
             "retry_attempts": 3,
             "retry_delay_seconds": 60,
             "compress_before_upload": True,
@@ -104,46 +76,31 @@ class IncrementalUploader:
         """Load upload state to track uploaded files."""
         if self._upload_state_file.exists():
             try:
-                with open(self._upload_state_file, "r") as f:
+                with open(self._upload_state_file, "r", encoding="utf-8") as f:
                     return json.load(f)
-            except Exception:
-                pass
+            except (json.JSONDecodeError, IOError):
+                logger.warning("Failed to load upload state, starting fresh")
         
-        return {
-            "uploaded_files": {},
-            "last_upload": None,
-            "total_bytes_uploaded": 0,
-        }
+        return {"uploaded_files": {}, "last_upload": None, "total_bytes_uploaded": 0}
     
     def _save_upload_state(self) -> None:
         """Save upload state."""
         try:
-            with open(self._upload_state_file, "w") as f:
+            with open(self._upload_state_file, "w", encoding="utf-8") as f:
                 json.dump(self._upload_state, f, indent=2)
-        except Exception as e:
+        except IOError as e:
             logger.error(f"Failed to save upload state: {e}")
     
     def authenticate(self, credentials_path: Optional[str] = None) -> bool:
-        """
-        Authenticate with Google Drive.
-        
-        Supports both OAuth2 (interactive) and service account (unattended).
-        
-        Args:
-            credentials_path: Path to credentials file
-        
-        Returns:
-            True if authentication successful
-        """
+        """Authenticate with Google Drive using OAuth2 or service account."""
         if credentials_path is None:
             credentials_path = self.project_root / "configs" / "gdrive_credentials.json"
         
         credentials_path = Path(credentials_path)
         token_path = self.project_root / "configs" / "gdrive_token.json"
-        
         creds = None
         
-        # Try to load existing token
+        # Try existing token
         if token_path.exists():
             try:
                 creds = Credentials.from_authorized_user_file(str(token_path), SCOPES)
@@ -160,33 +117,31 @@ class IncrementalUploader:
             
             if not creds:
                 if not credentials_path.exists():
-                    logger.error(
-                        f"Credentials file not found: {credentials_path}\n"
-                        "Please set up Google Drive API credentials."
-                    )
+                    logger.error(f"Credentials file not found: {credentials_path}")
                     return False
                 
-                # Check if it's a service account
-                with open(credentials_path, "r") as f:
-                    cred_data = json.load(f)
-                
-                if "type" in cred_data and cred_data["type"] == "service_account":
-                    # Service account authentication
-                    creds = service_account.Credentials.from_service_account_file(
-                        str(credentials_path), scopes=SCOPES
-                    )
-                else:
-                    # OAuth2 flow
-                    flow = InstalledAppFlow.from_client_secrets_file(
-                        str(credentials_path), SCOPES
-                    )
-                    creds = flow.run_local_server(port=0)
-                
-                # Save token for future use
-                if hasattr(creds, "to_json"):
-                    token_path.parent.mkdir(parents=True, exist_ok=True)
-                    with open(token_path, "w") as f:
-                        f.write(creds.to_json())
+                try:
+                    with open(credentials_path, "r", encoding="utf-8") as f:
+                        cred_data = json.load(f)
+                    
+                    if cred_data.get("type") == "service_account":
+                        creds = service_account.Credentials.from_service_account_file(
+                            str(credentials_path), scopes=SCOPES
+                        )
+                    else:
+                        flow = InstalledAppFlow.from_client_secrets_file(
+                            str(credentials_path), SCOPES
+                        )
+                        creds = flow.run_local_server(port=0)
+                    
+                    # Save token
+                    if hasattr(creds, "to_json"):
+                        token_path.parent.mkdir(parents=True, exist_ok=True)
+                        with open(token_path, "w", encoding="utf-8") as f:
+                            f.write(creds.to_json())
+                except Exception as e:
+                    logger.error(f"Authentication failed: {e}")
+                    return False
         
         try:
             self._service = build("drive", "v3", credentials=creds)
@@ -195,38 +150,6 @@ class IncrementalUploader:
         except Exception as e:
             logger.error(f"Failed to build Drive service: {e}")
             return False
-    
-    def _get_or_create_folder(self, folder_name: str, parent_id: Optional[str] = None) -> Optional[str]:
-        """Get or create a folder in Google Drive."""
-        if not self._service:
-            return None
-        
-        # Search for existing folder
-        query = f"name='{folder_name}' and mimeType='application/vnd.google-apps.folder' and trashed=false"
-        if parent_id:
-            query += f" and '{parent_id}' in parents"
-        
-        try:
-            results = self._service.files().list(q=query, fields="files(id, name)").execute()
-            files = results.get("files", [])
-            
-            if files:
-                return files[0]["id"]
-            
-            # Create folder
-            folder_metadata = {
-                "name": folder_name,
-                "mimeType": "application/vnd.google-apps.folder"
-            }
-            if parent_id:
-                folder_metadata["parents"] = [parent_id]
-            
-            folder = self._service.files().create(body=folder_metadata, fields="id").execute()
-            return folder.get("id")
-            
-        except HttpError as e:
-            logger.error(f"Failed to get/create folder: {e}")
-            return None
     
     def _compute_file_hash(self, file_path: Path) -> str:
         """Compute MD5 hash of a file for change detection."""
@@ -239,11 +162,9 @@ class IncrementalUploader:
     def _compress_file(self, file_path: Path) -> Path:
         """Compress a file using gzip."""
         gz_path = file_path.with_suffix(file_path.suffix + ".gz")
-        
         with open(file_path, "rb") as f_in:
             with gzip.open(gz_path, "wb") as f_out:
                 shutil.copyfileobj(f_in, f_out)
-        
         return gz_path
     
     def upload_file(
@@ -252,69 +173,54 @@ class IncrementalUploader:
         folder_id: Optional[str] = None,
         compress: bool = True
     ) -> Optional[str]:
-        """
-        Upload a single file to Google Drive.
-        
-        Args:
-            file_path: Path to file to upload
-            folder_id: Target folder ID (uses research folder if None)
-            compress: Whether to compress before upload
-        
-        Returns:
-            File ID if successful, None otherwise
-        """
-        if not self._service:
-            if not self.authenticate():
-                return None
+        """Upload a single file to Google Drive."""
+        if not self._service and not self.authenticate():
+            return None
         
         file_path = Path(file_path)
         if not file_path.exists():
             logger.error(f"File not found: {file_path}")
             return None
         
-        # Use shared research folder - all contributors upload here
+        # Use shared research folder
         if folder_id is None:
-            folder_id = self.config.get("research_folder_id")
-            # Default to the shared OptiMetrics research folder
-            if not folder_id:
-                folder_id = "1KLCQmnhgXTraQvVs0I60iut9scDMCMxr"
+            folder_id = self.config.get("research_folder_id", SHARED_FOLDER_ID)
         
-        # Check if file already uploaded (by hash)
+        # Check if already uploaded (by hash)
         file_hash = self._compute_file_hash(file_path)
-        if file_path.name in self._upload_state["uploaded_files"]:
-            if self._upload_state["uploaded_files"][file_path.name].get("hash") == file_hash:
-                logger.debug(f"File {file_path.name} already uploaded (unchanged)")
-                return self._upload_state["uploaded_files"][file_path.name].get("id")
+        cached = self._upload_state["uploaded_files"].get(file_path.name, {})
+        if cached.get("hash") == file_hash:
+            logger.debug(f"File {file_path.name} already uploaded (unchanged)")
+            return cached.get("id")
         
         # Compress if requested
         upload_path = file_path
         if compress and self.config.get("compress_before_upload", True):
-            upload_path = self._compress_file(file_path)
+            try:
+                upload_path = self._compress_file(file_path)
+            except IOError as e:
+                logger.warning(f"Compression failed, uploading uncompressed: {e}")
+                upload_path = file_path
         
         try:
-            file_metadata = {
-                "name": upload_path.name,
-            }
+            file_metadata = {"name": upload_path.name}
             if folder_id:
                 file_metadata["parents"] = [folder_id]
             
-            media = MediaFileUpload(
-                str(upload_path),
-                resumable=True,
-                chunksize=1024*1024  # 1MB chunks
-            )
+            media = MediaFileUpload(str(upload_path), resumable=True, chunksize=1024*1024)
             
             # Upload with retry
-            for attempt in range(self.config.get("retry_attempts", 3)):
+            retry_attempts = self.config.get("retry_attempts", 3)
+            retry_delay = self.config.get("retry_delay_seconds", 60)
+            
+            for attempt in range(retry_attempts):
                 try:
-                    file = self._service.files().create(
-                        body=file_metadata,
-                        media_body=media,
-                        fields="id, size"
+                    result = self._service.files().create(
+                        body=file_metadata, media_body=media, fields="id, size"
                     ).execute()
                     
-                    file_id = file.get("id")
-                    file_size = int(file.get("size", 0))
+                    file_id = result.get("id")
+                    file_size = int(result.get("size", 0))
                     
                     # Update state
                     with self._lock:
@@ -330,44 +236,38 @@ class IncrementalUploader:
                     
                     logger.info(f"Uploaded {file_path.name} ({file_size} bytes)")
                     
-                    # Clean up compressed file
-                    if upload_path != file_path:
+                    # Cleanup compressed file
+                    if upload_path != file_path and upload_path.exists():
                         upload_path.unlink()
                     
                     return file_id
                     
                 except HttpError as e:
-                    if attempt < self.config.get("retry_attempts", 3) - 1:
-                        delay = self.config.get("retry_delay_seconds", 60)
-                        logger.warning(f"Upload failed, retrying in {delay}s: {e}")
-                        time.sleep(delay)
+                    if attempt < retry_attempts - 1:
+                        logger.warning(f"Upload failed, retrying in {retry_delay}s: {e}")
+                        time.sleep(retry_delay)
                     else:
                         raise
             
         except Exception as e:
             logger.error(f"Upload failed: {e}")
-            # Clean up compressed file on failure
             if upload_path != file_path and upload_path.exists():
                 upload_path.unlink()
             return None
+        
+        return None
     
     def upload_new_files(self, log_directory: Optional[str] = None) -> List[str]:
-        """
-        Upload all new/changed files from log directory.
-        
-        Args:
-            log_directory: Directory containing log files
-        
-        Returns:
-            List of uploaded file IDs
-        """
+        """Upload all new/changed files from log directory."""
         if log_directory is None:
             log_directory = self.project_root / "logs"
         
         log_directory = Path(log_directory)
-        uploaded_ids = []
+        if not log_directory.exists():
+            logger.warning(f"Log directory not found: {log_directory}")
+            return []
         
-        # Find CSV files
+        uploaded_ids = []
         for csv_file in log_directory.glob("*.csv"):
             file_id = self.upload_file(str(csv_file))
             if file_id:
@@ -376,12 +276,7 @@ class IncrementalUploader:
         return uploaded_ids
     
     def start_background_sync(self, interval_minutes: int = 30) -> None:
-        """
-        Start background sync thread.
-        
-        Args:
-            interval_minutes: Upload interval in minutes
-        """
+        """Start background sync thread."""
         if self._running:
             return
         
@@ -394,7 +289,7 @@ class IncrementalUploader:
                 except Exception as e:
                     logger.error(f"Background sync error: {e}")
                 
-                # Sleep in small increments to allow quick shutdown
+                # Sleep in small increments for responsive shutdown
                 for _ in range(interval_minutes * 60):
                     if not self._running:
                         break
@@ -418,12 +313,8 @@ class IncrementalUploader:
         }
 
 
-def setup_gdrive_for_research():
-    """
-    Interactive setup for Google Drive research data collection.
-    
-    Guides users through setting up credentials and folder access.
-    """
+def setup_gdrive_for_research() -> bool:
+    """Interactive setup for Google Drive research data collection."""
     print("\n" + "="*60)
     print("OptiMetrics Google Drive Setup")
     print("="*60)
@@ -434,28 +325,29 @@ def setup_gdrive_for_research():
     creds_path = project_root / "configs" / "gdrive_credentials.json"
     
     if not creds_path.exists():
-        print("To enable cloud sync, you need Google Drive API credentials.")
-        print("\nSteps:")
+        print("To enable cloud sync, you need Google Drive API credentials.\n")
+        print("Steps:")
         print("1. Go to https://console.cloud.google.com/")
         print("2. Create a new project or select existing")
         print("3. Enable Google Drive API")
         print("4. Create OAuth 2.0 credentials (Desktop app)")
         print("5. Download credentials.json")
-        print(f"6. Save as: {creds_path}")
-        print("\nAlternatively, a service account can be used for unattended operation.")
+        print(f"6. Save as: {creds_path}\n")
         return False
     
-    uploader = IncrementalUploader()
-    
-    if uploader.authenticate():
-        print("\nAuthentication successful!")
-        print("Metrics will be automatically uploaded to Google Drive.")
-        return True
-    else:
-        print("\nAuthentication failed. Please check your credentials.")
+    try:
+        uploader = IncrementalUploader()
+        if uploader.authenticate():
+            print("\nAuthentication successful!")
+            print("Metrics will be automatically uploaded to Google Drive.")
+            return True
+        else:
+            print("\nAuthentication failed. Please check your credentials.")
+            return False
+    except ImportError as e:
+        print(f"\nMissing dependencies: {e}")
         return False
 
 
 if __name__ == "__main__":
-    # Run setup if executed directly
     setup_gdrive_for_research()
