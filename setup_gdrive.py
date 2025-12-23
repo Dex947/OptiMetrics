@@ -36,7 +36,6 @@ PROJECT_ROOT = Path(__file__).parent
 TOKEN_PATH = PROJECT_ROOT / "configs" / "gdrive_token.json"
 
 # Pre-configured OAuth client (public client for OptiMetrics)
-# This is a public OAuth client ID - safe to include in open source
 CLIENT_CONFIG = {
     "installed": {
         "client_id": "1071137752951-0vn4t4qp3r0k8q8q8q8q8q8q8q8q8q8q.apps.googleusercontent.com",
@@ -46,37 +45,6 @@ CLIENT_CONFIG = {
         "redirect_uris": ["http://localhost"]
     }
 }
-
-
-def authenticate_with_existing_token():
-    """Try to use existing MCP GDrive token with write scope."""
-    mcp_token_path = Path("C:/Users/DELL/.codeium/windsurf/servers/.gdrive-server-credentials.json")
-    
-    if mcp_token_path.exists():
-        try:
-            with open(mcp_token_path, "r") as f:
-                token_data = json.load(f)
-            
-            # Check scope
-            scope = token_data.get("scope", "")
-            if "drive.file" in scope or "drive" in scope and "readonly" not in scope:
-                print("Found MCP token with write access")
-                creds = Credentials(
-                    token=token_data.get("access_token"),
-                    refresh_token=token_data.get("refresh_token"),
-                    token_uri="https://oauth2.googleapis.com/token",
-                    client_id=token_data.get("client_id", ""),
-                    client_secret=token_data.get("client_secret", ""),
-                    scopes=SCOPES
-                )
-                return creds
-            else:
-                print(f"MCP token has readonly scope: {scope}")
-                print("Need to re-authenticate with write access")
-        except Exception as e:
-            print(f"Could not load MCP token: {e}")
-    
-    return None
 
 
 def authenticate():
@@ -98,21 +66,6 @@ def authenticate():
         except Exception as e:
             print(f"Could not load existing token: {e}")
             creds = None
-    
-    # Try MCP token
-    creds = authenticate_with_existing_token()
-    if creds:
-        try:
-            if creds.expired and creds.refresh_token:
-                creds.refresh(Request())
-            if creds.valid:
-                # Save for future use
-                TOKEN_PATH.parent.mkdir(parents=True, exist_ok=True)
-                with open(TOKEN_PATH, "w") as f:
-                    f.write(creds.to_json())
-                return creds
-        except Exception:
-            pass
     
     # Need manual OAuth setup
     print("\n" + "="*60)

@@ -48,12 +48,14 @@ from src.utils import (
     SessionState,
 )
 
-# Import incremental uploader
+# Import data management and cloud sync
 try:
-    from src.gdrive_uploader import IncrementalUploader, HAS_GDRIVE
+    from src.data_manager import DeviceDataManager
+    from src.cloud_sync import CloudSyncManager, HAS_GDRIVE
 except ImportError:
     HAS_GDRIVE = False
-    IncrementalUploader = None
+    DeviceDataManager = None
+    CloudSyncManager = None
 
 from src.adapters import (
     CPUAdapter,
@@ -325,9 +327,10 @@ class HardwareLogger:
         # Initialize components
         self._adapters: List[Any] = []
         self._buffer = MetricsBuffer(self.config)
-        self._writer = CSVWriter(self.config)
+        self._writer = CSVWriter(self.config)  # Legacy writer for backwards compat
         self._classifier: Optional[SessionClassifier] = None
-        self._uploader: Optional[GDriveUploader] = None
+        self._data_manager: Optional[DeviceDataManager] = None
+        self._cloud_sync: Optional[CloudSyncManager] = None
         
         # State
         self._running = False
@@ -348,19 +351,28 @@ class HardwareLogger:
         # if general_config.get("enable_session_classification", False):
         #     self._classifier = SessionClassifier(self.config)
         
-        # Initialize cloud uploader (incremental)
-        cloud_config = self.config.get("cloud", {})
-        if cloud_config.get("enabled", False) and HAS_GDRIVE and IncrementalUploader:
+        # Initialize new data manager (per-device, per-hardware structure)
+        if DeviceDataManager:
             try:
-                self._uploader = IncrementalUploader()
-                if self._uploader.authenticate():
+                self._data_manager = DeviceDataManager(self._hardware_id)
+                logger.info(f"Data manager initialized: {self._data_manager.device_dir}")
+            except Exception as e:
+                logger.warning(f"Failed to initialize data manager: {e}")
+                self._data_manager = None
+        
+        # Initialize cloud sync (incremental uploads)
+        cloud_config = self.config.get("cloud", {})
+        if cloud_config.get("enabled", False) and HAS_GDRIVE and CloudSyncManager and self._data_manager:
+            try:
+                self._cloud_sync = CloudSyncManager(self._data_manager)
+                if self._cloud_sync.authenticate():
                     logger.info("Cloud sync enabled - metrics will be uploaded automatically")
                 else:
                     logger.warning("Cloud sync authentication failed - running in local-only mode")
-                    self._uploader = None
+                    self._cloud_sync = None
             except Exception as e:
-                logger.warning(f"Failed to initialize cloud uploader: {e}")
-                self._uploader = None
+                logger.warning(f"Failed to initialize cloud sync: {e}")
+                self._cloud_sync = None
     
     def _init_adapters(self) -> None:
         """Initialize hardware adapters based on configuration."""
@@ -474,37 +486,46 @@ class HardwareLogger:
         logger.info("Collection loop stopped")
     
     def _flush_buffer(self) -> None:
-        """Flush buffer to CSV file."""
+        """Flush buffer to CSV files."""
         batch = self._buffer.get_batch()
         if batch:
-            written = self._writer.write_batch(batch)
-            logger.debug(f"Wrote {written} records to CSV")
+            # Write to new per-hardware structure
+            if self._data_manager:
+                for metrics in batch:
+                    rows_written = self._data_manager.write_metrics(metrics)
+                    if rows_written:
+                        total = sum(rows_written.values())
+                        logger.debug(f"Wrote metrics to {len(rows_written)} hardware files")
+            else:
+                # Fallback to legacy writer
+                written = self._writer.write_batch(batch)
+                logger.debug(f"Wrote {written} records to CSV (legacy)")
     
     def _upload_loop(self) -> None:
         """Background upload loop for incremental sync."""
-        if not self._uploader:
+        if not self._cloud_sync:
             return
         
         cloud_config = self.config.get("cloud", {})
-        interval_minutes = cloud_config.get("upload_interval_minutes", 30)
+        interval_minutes = cloud_config.get("upload_interval_minutes", 5)  # More frequent for incremental
+        
+        # Initial sync after startup delay
+        time.sleep(30)  # Wait 30 seconds before first sync
         
         while self._running:
+            try:
+                synced = self._cloud_sync.sync()
+                if synced:
+                    total_rows = sum(synced.values())
+                    logger.info(f"Synced {total_rows} rows to cloud ({len(synced)} files)")
+            except Exception as e:
+                logger.error(f"Sync error: {e}")
+            
             # Sleep in small increments for responsive shutdown
             for _ in range(interval_minutes * 60):
                 if not self._running:
                     return
                 time.sleep(1)
-            
-            if not self._running:
-                break
-            
-            try:
-                log_dir = get_log_file_path(self.config).parent
-                uploaded = self._uploader.upload_new_files(str(log_dir))
-                if uploaded:
-                    logger.info(f"Uploaded {len(uploaded)} files to cloud")
-            except Exception as e:
-                logger.error(f"Upload error: {e}")
     
     def start(self) -> None:
         """Start the logging process."""
@@ -533,10 +554,10 @@ class HardwareLogger:
         self._collect_thread.start()
         
         # Start upload thread if enabled
-        if self._uploader:
+        if self._cloud_sync:
             self._upload_thread = threading.Thread(
                 target=self._upload_loop,
-                name="CloudUploader",
+                name="CloudSync",
                 daemon=True
             )
             self._upload_thread.start()
@@ -560,6 +581,17 @@ class HardwareLogger:
         
         # Close writer
         self._writer.close()
+        
+        # Close data manager
+        if self._data_manager:
+            self._data_manager.close()
+        
+        # Final sync before shutdown
+        if self._cloud_sync:
+            try:
+                self._cloud_sync.sync()
+            except Exception as e:
+                logger.warning(f"Final sync failed: {e}")
         
         # Compress old files
         self._writer.compress_old_files()
@@ -595,7 +627,7 @@ class HardwareLogger:
     
     def get_status(self) -> Dict[str, Any]:
         """Get current logger status."""
-        return {
+        status = {
             "running": self._running,
             "paused": self._paused,
             "metrics_count": self._metrics_count,
@@ -609,6 +641,16 @@ class HardwareLogger:
                 else None
             ),
         }
+        
+        # Add data manager stats
+        if self._data_manager:
+            status["data_stats"] = self._data_manager.get_stats()
+        
+        # Add cloud sync stats
+        if self._cloud_sync:
+            status["cloud_stats"] = self._cloud_sync.get_sync_stats()
+        
+        return status
 
 
 def main():
