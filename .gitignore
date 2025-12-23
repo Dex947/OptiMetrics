@@ -75,6 +75,8 @@ logs/*.json
 # Config files with sensitive data
 configs/credentials.json
 configs/gdrive_token.json
+configs/gdrive_credentials.json
+configs/client_secret*.json
 configs/onedrive_token.json
 configs/*.key
 configs/secrets.yaml

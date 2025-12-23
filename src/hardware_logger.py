@@ -375,14 +375,22 @@ class HardwareLogger:
             else:
                 logger.warning("Failed to initialize CPU adapter")
         
-        # GPU Adapter (NVIDIA)
+        # GPU Adapters (NVIDIA and Intel)
         if general_config.get("collect_gpu", True):
-            adapter = NvidiaGPUAdapter(self.config)
-            if adapter.initialize():
-                self._adapters.append(adapter)
+            # NVIDIA GPU
+            nvidia_adapter = NvidiaGPUAdapter(self.config)
+            if nvidia_adapter.initialize():
+                self._adapters.append(nvidia_adapter)
                 logger.info("NVIDIA GPU adapter initialized")
             else:
-                logger.info("No NVIDIA GPU detected or pynvml not available")
+                logger.debug("No NVIDIA GPU detected or pynvml not available")
+            
+            # Intel GPU
+            from src.adapters import IntelGPUAdapter
+            intel_adapter = IntelGPUAdapter(self.config)
+            if intel_adapter.initialize():
+                self._adapters.append(intel_adapter)
+                logger.info("Intel GPU adapter initialized")
         
         # Memory Adapter
         if general_config.get("collect_ram", True):

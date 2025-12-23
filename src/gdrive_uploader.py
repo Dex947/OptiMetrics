@@ -30,7 +30,7 @@ except ImportError:
 
 logger = logging.getLogger("optimetrics.gdrive")
 
-SCOPES = ["https://www.googleapis.com/auth/drive.file"]
+SCOPES = ["https://www.googleapis.com/auth/drive"]
 SHARED_FOLDER_ID = "1KLCQmnhgXTraQvVs0I60iut9scDMCMxr"
 
 
@@ -207,7 +207,12 @@ class IncrementalUploader:
             if folder_id:
                 file_metadata["parents"] = [folder_id]
             
-            media = MediaFileUpload(str(upload_path), resumable=True, chunksize=1024*1024)
+            # Set mimetype based on file extension
+            mimetype = "text/csv" if upload_path.suffix.lower() == ".csv" else "application/octet-stream"
+            if upload_path.suffix.lower() == ".gz":
+                mimetype = "application/gzip"
+            
+            media = MediaFileUpload(str(upload_path), mimetype=mimetype, resumable=True, chunksize=1024*1024)
             
             # Upload with retry
             retry_attempts = self.config.get("retry_attempts", 3)

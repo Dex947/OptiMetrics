@@ -16,6 +16,7 @@ Available Adapters:
 from .base_adapter import BaseHardwareAdapter
 from .cpu_adapter import CPUAdapter
 from .nvidia_adapter import NvidiaGPUAdapter
+from .intel_gpu_adapter import IntelGPUAdapter
 from .memory_adapter import MemoryAdapter
 from .disk_adapter import DiskAdapter
 from .network_adapter import NetworkAdapter
@@ -24,6 +25,7 @@ __all__ = [
     "BaseHardwareAdapter",
     "CPUAdapter", 
     "NvidiaGPUAdapter",
+    "IntelGPUAdapter",
     "MemoryAdapter",
     "DiskAdapter",
     "NetworkAdapter",
