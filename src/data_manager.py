@@ -316,11 +316,20 @@ class DeviceDataManager:
         }
         
         # CPU metrics - detect by key patterns from CPUAdapter
+        # Keys: core_*_utilization, core_*_freq_mhz, total_utilization, avg_freq_mhz,
+        # context_switches, interrupts, soft_interrupts, temperature, power_watts, load_avg_*
         cpu_keys = [
             "core_", "total_utilization", "avg_freq", "freq_mhz", "freq_min", "freq_max",
             "context_switches", "interrupts", "soft_interrupts", "temperature", "power_watts",
-            "syscalls", "load_1min", "load_5min", "load_15min"
+            "syscalls", "load_avg", "load_1", "load_5", "load_15"
         ]
+        # CPU-specific keys that should NOT go to GPU even if they match
+        cpu_specific = ["core_0", "core_1", "core_2", "core_3", "core_4", "core_5", 
+                       "core_6", "core_7", "core_8", "core_9", "core_10", "core_11",
+                       "core_12", "core_13", "core_14", "core_15", "core_16", "core_17",
+                       "core_18", "core_19", "total_utilization", "avg_freq", "context_switches",
+                       "soft_interrupts", "load_avg", "interrupts"]
+        
         cpu_record = base_record.copy()
         cpu_has_data = False
         for key, value in metrics.items():
@@ -331,15 +340,29 @@ class DeviceDataManager:
             categorized["cpu"].append(cpu_record)
         
         # GPU NVIDIA metrics - detect by key patterns from NvidiaGPUAdapter
+        # Keys: utilization, memory_utilization, vram_*, temperature, power_watts, 
+        # *_clock_mhz, fan_speed, pcie_*, encoder_*, decoder_*, compute_processes, etc.
         nvidia_keys = [
-            "gpu_utilization", "gpu_memory", "gpu_temp", "gpu_power", "gpu_fan",
-            "gpu_clock", "gpu_encoder", "gpu_decoder", "gpu_name", "vram_"
+            "utilization", "vram_", "temperature", "power_watts", "power_limit",
+            "core_clock", "memory_clock", "sm_clock", "fan_speed", 
+            "pcie_tx", "pcie_rx", "encoder_", "decoder_", 
+            "compute_processes", "graphics_processes", "performance_state"
         ]
+        
         gpu_record = base_record.copy()
         gpu_has_data = False
         for key, value in metrics.items():
-            if any(p in key.lower() for p in nvidia_keys) and "intel" not in key.lower():
-                gpu_record[key] = value
+            # Skip if it's a CPU-specific key
+            if any(cpu_key in key for cpu_key in cpu_specific):
+                continue
+            # Skip memory/disk/network keys
+            if any(key.startswith(p) for p in ["ram_", "swap_", "disk_", "net_"]):
+                continue
+            if "intel" in key.lower():
+                continue
+            # Check if key matches nvidia patterns
+            if any(p in key.lower() for p in nvidia_keys):
+                gpu_record[f"gpu_{key}"] = value
                 gpu_has_data = True
         if gpu_has_data:
             gpu_record["gpu_index"] = 0

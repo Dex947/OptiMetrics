@@ -285,14 +285,36 @@ class CPUAdapter(BaseHardwareAdapter):
                         if sensor_readings:
                             return sensor_readings[0].current
             
-            # Windows WMI method
-            if HAS_WMI and self._wmi_conn:
+            # Windows WMI method - try multiple approaches
+            if HAS_WMI and sys.platform == "win32":
                 try:
-                    temp_data = self._wmi_conn.MSAcpi_ThermalZoneTemperature()
+                    # Try root\wmi namespace for thermal zone
+                    c = wmi.WMI(namespace="root\\wmi")
+                    temp_data = c.MSAcpi_ThermalZoneTemperature()
                     if temp_data:
                         # Convert from tenths of Kelvin to Celsius
                         kelvin = temp_data[0].CurrentTemperature / 10.0
                         return kelvin - 273.15
+                except Exception:
+                    pass
+                
+                try:
+                    # Try OpenHardwareMonitor/LibreHardwareMonitor WMI interface
+                    c = wmi.WMI(namespace="root\\OpenHardwareMonitor")
+                    sensors = c.Sensor()
+                    for sensor in sensors:
+                        if sensor.SensorType == "Temperature" and "CPU" in sensor.Name:
+                            return float(sensor.Value)
+                except Exception:
+                    pass
+                
+                try:
+                    # Try LibreHardwareMonitor WMI interface
+                    c = wmi.WMI(namespace="root\\LibreHardwareMonitor")
+                    sensors = c.Sensor()
+                    for sensor in sensors:
+                        if sensor.SensorType == "Temperature" and "CPU" in sensor.Name:
+                            return float(sensor.Value)
                 except Exception:
                     pass
             
@@ -303,8 +325,27 @@ class CPUAdapter(BaseHardwareAdapter):
     
     def _get_cpu_power(self) -> Optional[float]:
         """Get CPU power consumption (Windows only via WMI/RAPL)."""
-        # Power monitoring typically requires specialized tools or RAPL access
-        # This is a placeholder for future implementation
+        if HAS_WMI and sys.platform == "win32":
+            try:
+                # Try OpenHardwareMonitor WMI interface
+                c = wmi.WMI(namespace="root\\OpenHardwareMonitor")
+                sensors = c.Sensor()
+                for sensor in sensors:
+                    if sensor.SensorType == "Power" and "CPU" in sensor.Name:
+                        return float(sensor.Value)
+            except Exception:
+                pass
+            
+            try:
+                # Try LibreHardwareMonitor WMI interface
+                c = wmi.WMI(namespace="root\\LibreHardwareMonitor")
+                sensors = c.Sensor()
+                for sensor in sensors:
+                    if sensor.SensorType == "Power" and "CPU" in sensor.Name:
+                        return float(sensor.Value)
+            except Exception:
+                pass
+        
         return None
     
     def cleanup(self) -> None:
