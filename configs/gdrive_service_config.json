@@ -1,5 +1,5 @@
 {
-  "research_folder_id": "SHARED_FOLDER_ID_HERE",
+  "research_folder_id": "1KLCQmnhgXTraQvVs0I60iut9scDMCMxr",
   "upload_mode": "incremental",
   "batch_size_mb": 5,
   "retry_attempts": 3,
@@ -19,5 +19,6 @@
     "pattern": "{hardware_id}_{date}_{sequence}.csv",
     "include_session_category": true
   },
-  "notes": "Replace SHARED_FOLDER_ID_HERE with the actual Google Drive folder ID for research data collection"
+  "shared_folder_url": "https://drive.google.com/drive/folders/1KLCQmnhgXTraQvVs0I60iut9scDMCMxr",
+  "notes": "This is the shared research folder. All contributors upload anonymized metrics here."
 }

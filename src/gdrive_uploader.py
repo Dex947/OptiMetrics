@@ -272,12 +272,12 @@ class IncrementalUploader:
             logger.error(f"File not found: {file_path}")
             return None
         
-        # Use research folder if no folder specified
+        # Use shared research folder - all contributors upload here
         if folder_id is None:
             folder_id = self.config.get("research_folder_id")
-            if not folder_id or folder_id == "SHARED_FOLDER_ID_HERE":
-                # Create default folder structure
-                folder_id = self._get_or_create_folder("OptiMetrics_Research")
+            # Default to the shared OptiMetrics research folder
+            if not folder_id:
+                folder_id = "1KLCQmnhgXTraQvVs0I60iut9scDMCMxr"
         
         # Check if file already uploaded (by hash)
         file_hash = self._compute_file_hash(file_path)

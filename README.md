@@ -1,118 +1,123 @@
+<div align="center">
+
 # OptiMetrics
+
+### Building the Future of Hardware-Aware Software Optimization
 
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 [![Python](https://img.shields.io/badge/Python-3.9%2B-green.svg)](https://www.python.org/)
 [![Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20Linux%20%7C%20macOS-lightgrey.svg)](https://github.com/Dex947/OptiMetrics)
+[![Contributors](https://img.shields.io/badge/Contributors-Welcome-orange.svg)](#join-the-research)
 
-**OptiMetrics** is an open-source, privacy-focused hardware metrics collection tool that powers a **Hardware-Intent-Aware Execution Policy Layer**—a next-generation optimization system that adapts runtime behavior based on workload goals rather than assuming maximal resource usage.
+**Crowdsourced hardware telemetry for intelligent runtime optimization**
 
-## The Vision: Intent-Aware Hardware Optimization
+[Get Started](#quick-start) | [Why Contribute](#why-your-data-matters) | [Privacy](#privacy-commitment) | [Research Goals](#the-vision)
 
-Traditional optimization approaches focus on:
-- ❌ Shortest execution path
-- ❌ Maximum speed at all costs
-- ❌ Brute-force resource utilization
+</div>
 
-**OptiMetrics enables a smarter approach:**
-- ✅ **Goal-Aware**: Optimize for latency, precision, stability, or throughput based on actual intent
-- ✅ **Hardware-Aware**: Understand real hardware capabilities and thermal/power constraints
-- ✅ **Use-Case-Specific**: Different workloads (gaming vs. AI training vs. CAD) need different optimization strategies
-- ✅ **Modular Architecture**: Clean separation allows targeted optimization without bloat
+---
 
-### How It Works
+## The Problem We're Solving
 
-1. **Data Collection**: OptiMetrics collects hardware telemetry from diverse systems worldwide
-2. **Pattern Analysis**: Workload patterns are classified and correlated with hardware configurations
-3. **Policy Generation**: Machine learning models generate optimal execution policies
-4. **Adaptive Runtime**: The execution layer adjusts behavior based on detected workload goals
+Modern software treats all hardware the same way: **maximize everything, all the time.**
 
-### Why This Matters
+This approach is fundamentally broken:
+- A gaming session doesn't need the same optimization as an AI training job
+- A laptop on battery shouldn't behave like a desktop with unlimited power
+- A 4-core CPU and a 32-core workstation need different execution strategies
 
-Instead of blindly maximizing CPU/GPU usage, the system learns:
-- When **latency** matters more than throughput (real-time applications)
-- When **precision** is critical (scientific computing, CAD)
-- When **stability** trumps speed (long-running processes)
-- When **power efficiency** is the priority (mobile, thermal-constrained)
+**Current solutions optimize for:**
+| Approach | Reality |
+|----------|---------|
+| Shortest path | Not always the best path |
+| Maximum speed | Wastes power, generates heat |
+| Brute force | Ignores hardware constraints |
+| One-size-fits-all | Suboptimal for everyone |
 
-## Contributing Data
+---
 
-By running OptiMetrics, you contribute anonymized hardware metrics that help build better optimization policies for everyone. Data is automatically uploaded to our research database incrementally.
+## The Vision: Intent-Aware Execution
 
-**Your contribution helps create software that truly understands hardware.**
+We're building a **Hardware-Intent-Aware Execution Policy Layer**—software that understands:
 
-## Features
+- **What you're trying to achieve** (latency? throughput? precision? stability?)
+- **What your hardware can actually do** (thermal limits, power budget, core count)
+- **What workload you're running** (gaming, AI, CAD, coding, browsing)
 
-- **Comprehensive Hardware Metrics**
-  - CPU: Per-core utilization, frequency, temperature, power consumption
-  - GPU: Utilization, VRAM usage, clocks, temperature, power, encoder/decoder activity
-  - RAM: Usage, swap/page file, memory allocation patterns
-  - Disk: I/O statistics, throughput rates, usage per partition
-  - Network: Bandwidth, packet counts, connection statistics
+### The Result
 
-- **Privacy-First Design**
-  - Cryptographic hardware IDs for anonymized tracking
-  - No process names, window titles, or personal data collected
-  - No network addresses or file paths logged
-  - All identifiable hardware info is hashed
+Software that adapts its behavior based on **goals**, not assumptions:
 
-- **Automatic Session Classification**
-  - Detects workload patterns: gaming, AI training, CAD, graphics design, coding, browsing, etc.
-  - Based purely on system metrics—no application monitoring
-  - Configurable confidence thresholds
+| Goal | Optimization Strategy |
+|------|----------------------|
+| **Latency** | Prioritize response time over throughput |
+| **Precision** | Favor accuracy over speed |
+| **Stability** | Consistent performance over peak performance |
+| **Throughput** | Maximize work completed per unit time |
+| **Efficiency** | Minimize power while meeting requirements |
 
-- **Automatic Cloud Sync**
-  - Incremental upload to central research database
-  - AES-256 encryption for secure transfer
-  - Minimal bandwidth usage with delta compression
+This isn't bloat—it's **intelligence**. Modular design means you only load what you need.
 
-- **Efficient Data Storage**
-  - Per-second resolution logging
-  - Rolling daily log files with size limits
-  - Delta filtering to reduce file size (~5MB/hour)
-  - Automatic compression of old logs
+---
 
-- **Modular Architecture**
-  - Clean separation of adapters, classifiers, and core logic
-  - Easy to extend with new hardware support
-  - No bloat—only load what you need
+## Why Your Data Matters
 
-## Quick Start
+To build this system, we need **real-world hardware telemetry** from diverse systems:
 
-### Installation
+- Different CPU architectures (Intel, AMD, ARM)
+- Various GPU configurations (NVIDIA, AMD, integrated)
+- Range of RAM sizes and speeds
+- Different storage types (SSD, NVMe, HDD)
+- Real workload patterns from actual users
+
+### What We Learn From Your Data
+
+| Your Contribution | Research Outcome |
+|-------------------|------------------|
+| Gaming session metrics | Optimal GPU scheduling for frame consistency |
+| AI training patterns | Efficient batch processing strategies |
+| CAD workload data | Precision-focused execution policies |
+| Idle/browsing patterns | Power-saving optimization triggers |
+| Thermal throttling events | Proactive thermal management |
+
+**Every contributor makes the optimization smarter for everyone.**
+
+---
+
+## Join the Research
+
+### Quick Start (5 minutes)
 
 ```bash
-# Clone the repository
+# 1. Clone the repository
 git clone https://github.com/Dex947/OptiMetrics.git
 cd OptiMetrics
 
-# Create virtual environment
+# 2. Create virtual environment
 python -m venv venv
 venv\Scripts\activate  # Windows
 # source venv/bin/activate  # Linux/macOS
 
-# Install dependencies
+# 3. Install dependencies
 pip install -r requirements.txt
-```
 
-### Basic Usage
-
-```bash
-# Run the logger
+# 4. Run the collector
 python src/hardware_logger.py
-
-# Run with verbose output
-python src/hardware_logger.py --verbose
-
-# Run in test mode (10 seconds)
-python src/hardware_logger.py --test
-
-# Use custom config
-python src/hardware_logger.py --config path/to/config.yaml
 ```
+
+**That's it.** The tool runs in the background, collecting anonymized metrics and uploading them to our shared research database.
+
+### What Happens Next
+
+1. **Local Collection**: Metrics are logged to CSV files on your machine
+2. **Automatic Upload**: Data syncs to our [shared research folder](https://drive.google.com/drive/folders/1KLCQmnhgXTraQvVs0I60iut9scDMCMxr) every 30 minutes
+3. **Pattern Analysis**: We analyze aggregated data to identify optimization opportunities
+4. **Policy Generation**: Machine learning models create hardware-specific execution policies
+5. **Open Results**: All research findings are published openly
 
 ### Configuration
 
-Edit `configs/config.yaml` to customize:
+Customize collection in `configs/config.yaml`:
 
 ```yaml
 general:
@@ -124,22 +129,22 @@ general:
   collect_network: true
   enable_session_classification: true
 
-logging:
-  log_directory: "logs"
-  rolling_logs: true
-  max_file_size_mb: 50
-  enable_delta_filtering: true
-  delta_threshold_percent: 2.0
-
 cloud:
-  enabled: false
-  provider: "gdrive"
-  encrypt_before_upload: true
+  enabled: true  # Enable to contribute data
+  upload_interval_minutes: 30
 ```
 
-## Data Collected
+---
 
-### CPU Metrics
+## Privacy Commitment
+
+We take privacy seriously. Here's our commitment:
+
+### What We Collect (Hardware Metrics Only)
+
+<details>
+<summary><b>CPU Metrics</b> - Click to expand</summary>
+
 | Metric | Description | Unit |
 |--------|-------------|------|
 | `core_N_utilization` | Per-core CPU usage | % |
@@ -147,265 +152,243 @@ cloud:
 | `core_N_freq_mhz` | Per-core frequency | MHz |
 | `temperature` | CPU temperature (if available) | °C |
 | `context_switches` | OS context switch count | count |
-| `interrupts` | Hardware interrupt count | count |
 
-### GPU Metrics (NVIDIA)
+</details>
+
+<details>
+<summary><b>GPU Metrics</b> - Click to expand</summary>
+
 | Metric | Description | Unit |
 |--------|-------------|------|
 | `utilization` | GPU core utilization | % |
-| `memory_utilization` | Memory controller usage | % |
 | `vram_used_mb` | VRAM in use | MB |
-| `vram_percent` | VRAM usage percentage | % |
 | `temperature` | GPU temperature | °C |
 | `power_watts` | Power consumption | W |
 | `core_clock_mhz` | Graphics clock speed | MHz |
-| `memory_clock_mhz` | Memory clock speed | MHz |
-| `fan_speed` | Fan speed | % |
 | `encoder_utilization` | Video encoder usage | % |
-| `decoder_utilization` | Video decoder usage | % |
-| `compute_processes` | Active compute processes | count |
 
-### Memory Metrics
-| Metric | Description | Unit |
-|--------|-------------|------|
-| `ram_used_mb` | RAM in use | MB |
-| `ram_available_mb` | Available RAM | MB |
-| `ram_percent` | RAM usage percentage | % |
-| `swap_used_mb` | Swap/page file in use | MB |
-| `swap_percent` | Swap usage percentage | % |
+</details>
 
-### Disk Metrics
-| Metric | Description | Unit |
-|--------|-------------|------|
-| `disk_X_used_gb` | Disk space used | GB |
-| `disk_X_percent` | Disk usage percentage | % |
-| `disk_read_rate_mbps` | Read throughput | MB/s |
-| `disk_write_rate_mbps` | Write throughput | MB/s |
-| `disk_read_count` | Read operations | count |
-| `disk_write_count` | Write operations | count |
+<details>
+<summary><b>Memory, Disk, Network</b> - Click to expand</summary>
 
-### Network Metrics
-| Metric | Description | Unit |
-|--------|-------------|------|
-| `net_bytes_sent` | Total bytes sent | bytes |
-| `net_bytes_recv` | Total bytes received | bytes |
-| `net_send_rate_mbps` | Upload speed | Mbps |
-| `net_recv_rate_mbps` | Download speed | Mbps |
-| `net_connections_total` | Active connections | count |
+| Category | Metrics |
+|----------|---------|
+| **Memory** | RAM usage %, swap usage |
+| **Disk** | I/O rates, usage per partition |
+| **Network** | Bandwidth statistics (no addresses) |
 
-## Session Classification
+</details>
 
-OptiMetrics automatically detects workload categories based on hardware metric patterns:
+### What We NEVER Collect
 
-| Category | Detection Criteria |
-|----------|-------------------|
-| **gaming** | High GPU (60-100%), moderate CPU, high VRAM |
-| **ai_training** | Very high GPU (80-100%), high VRAM, compute processes |
-| **cad_3d_modeling** | High GPU + CPU, high RAM usage |
-| **graphics_design** | Moderate GPU, variable CPU, image processing patterns |
-| **video_editing** | High encoder usage, high disk I/O |
-| **coding_development** | Low GPU, moderate CPU, high RAM |
-| **document_editing** | Low resource usage overall |
-| **web_browsing** | Network activity, low-moderate CPU |
-| **idle** | Very low resource usage |
-| **system_maintenance** | High disk I/O, low GPU |
+| Category | Guarantee |
+|----------|-----------|
+| **Applications** | No process names, no window titles |
+| **Identity** | No usernames, no account info |
+| **Files** | No file paths, no document names |
+| **Network** | No IP addresses, no URLs, no connection details |
+| **Input** | No keyboard/mouse data |
+| **Screen** | No screenshots, no screen content |
 
-**Important:** Classification is based **only** on system metrics. No process names, window titles, or application data is ever collected.
+### How We Anonymize
 
-## Security & Privacy
+Your hardware is identified by a **cryptographic hash**:
 
-### What We Collect
-- Hardware performance metrics (CPU, GPU, RAM, disk, network)
-- Anonymized hardware identifier (cryptographic hash)
-- Detected workload category
-
-### What We DON'T Collect
-- ❌ Process names or application data
-- ❌ Window titles or screen content
-- ❌ User names or account information
-- ❌ File paths or document names
-- ❌ Network addresses or connection details
-- ❌ Keyboard/mouse input
-- ❌ Any personally identifiable information
-
-### Hardware ID Generation
-
-The hardware ID is a SHA-256 hash of hardware identifiers:
 ```
-SHA256(CPU_model + GPU_names + Motherboard_info) → First 32 characters
+SHA256(CPU_model + GPU_names + Motherboard) → "a3f8b2c1d4e5..."
 ```
 
-This creates a unique, consistent identifier that:
-- Cannot be reversed to identify specific hardware
-- Remains stable across reboots
-- Allows anonymous tracking for research purposes
+This hash:
+- **Cannot be reversed** to identify your hardware
+- **Remains consistent** across sessions for research continuity
+- **Contains no personal information**
 
-### Cloud Upload Security
+### Data Security
 
-When cloud sync is enabled:
-- Files are encrypted with AES-256-GCM before upload
-- Encryption keys are stored locally (never uploaded)
-- OAuth2 authentication for Google Drive
-- No data is shared with third parties
+- **AES-256 encryption** before upload
+- **Encryption keys stay on your machine** (never uploaded)
+- **OAuth2 authentication** for secure transfer
+- **Open-source code** - verify everything yourself
 
-## Contributing
+---
 
-We welcome contributions! Here's how you can help:
+## Workload Classification
 
-### Adding New Hardware Adapters
+OptiMetrics automatically detects what you're doing based on **hardware patterns only**:
 
-1. Create a new adapter in `src/adapters/`:
+| Category | How We Detect It |
+|----------|------------------|
+| **Gaming** | High GPU + moderate CPU + high VRAM |
+| **AI Training** | Very high GPU + compute processes |
+| **CAD/3D** | High GPU + CPU + RAM |
+| **Video Editing** | Encoder activity + disk I/O |
+| **Coding** | Low GPU + moderate CPU + high RAM |
+| **Browsing** | Network activity + low CPU |
+| **Idle** | Very low resource usage |
+
+**No application monitoring.** We detect "gaming" from GPU patterns, not by checking if you're running a game.
+
+---
+
+## How to Contribute
+
+### Option 1: Run the Collector (Easiest)
+
+Just run OptiMetrics on your machine. Your anonymized data helps everyone.
+
+```bash
+python src/hardware_logger.py
+```
+
+Leave it running in the background. That's it.
+
+### Option 2: Contribute Code
+
+We welcome code contributions:
+
+| Area | What's Needed |
+|------|---------------|
+| **Hardware Adapters** | AMD GPU, Intel Arc, Apple Silicon support |
+| **Classifiers** | Better workload detection algorithms |
+| **Analysis** | Data analysis and visualization tools |
+| **Documentation** | Tutorials, translations, examples |
+
+<details>
+<summary><b>Adding a Hardware Adapter</b> - Click to expand</summary>
 
 ```python
 from .base_adapter import BaseHardwareAdapter, HardwareInfo, MetricValue
 
-class MyCustomAdapter(BaseHardwareAdapter):
+class MyAdapter(BaseHardwareAdapter):
     def initialize(self) -> bool:
-        # Initialize hardware access
+        # Setup hardware access
         return True
     
     def get_hardware_info(self) -> HardwareInfo:
-        return HardwareInfo(
-            vendor="Vendor",
-            model="Model",
-            identifier="unique_id"
-        )
+        return HardwareInfo(vendor="Vendor", model="Model", identifier="id")
     
     def collect_metrics(self) -> Dict[str, MetricValue]:
-        return {
-            "my_metric": MetricValue(
-                name="my_metric",
-                value=42.0,
-                unit="%",
-                source="my_adapter"
-            )
-        }
+        return {"metric": MetricValue(name="metric", value=42.0, unit="%")}
     
     def cleanup(self) -> None:
         pass
 ```
 
-2. Register in `src/adapters/__init__.py`
-3. Add initialization in `hardware_logger.py`
-
-### Adding Session Classifiers
-
-Extend the `SessionClassifier` class in `src/utils.py`:
-
-```python
-# Add new category thresholds
-THRESHOLDS["my_category"] = {
-    "gpu_utilization": (min, max),
-    "cpu_utilization": (min, max),
-    # ... other metrics
-}
-```
+</details>
 
 ### Development Setup
 
 ```bash
-# Install dev dependencies
 pip install -r requirements.txt
 pip install pytest black ruff
 
-# Run tests
-pytest tests/
-
-# Format code
-black src/
-ruff check src/
+pytest tests/        # Run tests
+black src/           # Format code
+ruff check src/      # Lint
 ```
+
+---
+
+## Research Roadmap
+
+| Phase | Goal | Status |
+|-------|------|--------|
+| **Phase 1** | Data collection infrastructure | ✅ Complete |
+| **Phase 2** | Reach 100+ unique hardware configurations | 🔄 In Progress |
+| **Phase 3** | Pattern analysis and clustering | 📋 Planned |
+| **Phase 4** | ML model training for policy generation | 📋 Planned |
+| **Phase 5** | Open-source execution policy layer | 📋 Planned |
+
+### Hardware Support Roadmap
+
+- [x] Intel/AMD x86 CPUs
+- [x] NVIDIA GPUs (via pynvml)
+- [ ] AMD GPUs (ROCm/pyamdgpuinfo)
+- [ ] Intel Arc GPUs
+- [ ] Apple Silicon (M1/M2/M3)
+- [ ] ARM processors
+
+---
+
+## FAQ
+
+<details>
+<summary><b>Will this slow down my computer?</b></summary>
+
+No. OptiMetrics uses <1% CPU and ~50MB RAM. It's designed to be invisible.
+
+</details>
+
+<details>
+<summary><b>Can I see what data is being collected?</b></summary>
+
+Yes! Check the `logs/` folder. All data is stored as readable CSV files.
+
+</details>
+
+<details>
+<summary><b>How do I stop contributing data?</b></summary>
+
+Set `cloud.enabled: false` in `configs/config.yaml`. Local logging continues, but nothing uploads.
+
+</details>
+
+<details>
+<summary><b>Is this a cryptocurrency miner?</b></summary>
+
+No. The code is 100% open source. Audit it yourself. We collect metrics, not compute cycles.
+
+</details>
+
+<details>
+<summary><b>Who has access to the data?</b></summary>
+
+Data uploads to a [shared Google Drive folder](https://drive.google.com/drive/folders/1KLCQmnhgXTraQvVs0I60iut9scDMCMxr). The research team analyzes aggregated patterns. Individual data points are anonymized.
+
+</details>
+
+---
 
 ## Project Structure
 
 ```
 OptiMetrics/
 ├── src/
-│   ├── __init__.py
-│   ├── hardware_logger.py    # Main logging script
-│   ├── utils.py              # Utilities, crypto ID, cloud upload
-│   └── adapters/
-│       ├── __init__.py
-│       ├── base_adapter.py   # Abstract base class
-│       ├── cpu_adapter.py    # CPU metrics
-│       ├── nvidia_adapter.py # NVIDIA GPU metrics
-│       ├── memory_adapter.py # RAM metrics
-│       ├── disk_adapter.py   # Storage metrics
-│       └── network_adapter.py# Network metrics
-├── configs/
-│   └── config.yaml           # Configuration file
-├── logs/                     # CSV log storage
-├── docs/                     # Documentation
-├── LICENSE                   # Apache 2.0
-├── README.md
-├── requirements.txt
-└── .gitignore
+│   ├── hardware_logger.py    # Main collection script
+│   ├── gdrive_uploader.py    # Cloud sync
+│   ├── utils.py              # Utilities
+│   └── adapters/             # Hardware adapters
+├── configs/config.yaml       # Configuration
+├── logs/                     # Local CSV storage
+└── docs/                     # Documentation
 ```
 
 ## Requirements
 
-- **Python**: 3.9 or higher
-- **OS**: Windows 10/11 (primary), Linux/macOS (partial support)
-- **GPU**: NVIDIA GPU with drivers for GPU metrics (optional)
-
-### Dependencies
-
-| Package | Purpose |
-|---------|---------|
-| psutil | System metrics |
-| pynvml | NVIDIA GPU metrics |
-| GPUtil | GPU utilities |
-| py-cpuinfo | CPU information |
-| PyYAML | Configuration |
-| google-api-python-client | Google Drive upload |
-| cryptography | File encryption |
-
-## Auto-Start on Boot (Windows)
-
-To automatically start logging on system boot:
-
-1. Create a shortcut to `run_logger.bat`
-2. Press `Win + R`, type `shell:startup`
-3. Move the shortcut to the Startup folder
-
-Or use Task Scheduler for more control.
-
-## Troubleshooting
-
-### No GPU metrics
-- Ensure NVIDIA drivers are installed
-- Install pynvml: `pip install pynvml`
-- Check GPU is detected: `nvidia-smi`
-
-### Permission errors on Linux
-- Some metrics require root access
-- Run with sudo or add user to appropriate groups
-
-### High CPU usage
-- Increase `logging_interval` in config
-- Enable `enable_delta_filtering`
-- Reduce number of collected metrics
-
-## License
-
-This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENSE) file for details.
-
-## Acknowledgments
-
-- [psutil](https://github.com/giampaolo/psutil) - Cross-platform system monitoring
-- [pynvml](https://github.com/gpuopenanalytics/pynvml) - NVIDIA Management Library bindings
-- [py-cpuinfo](https://github.com/workhorsy/py-cpuinfo) - CPU information
-
-## Roadmap
-
-- [ ] AMD GPU support (ROCm/pyamdgpuinfo)
-- [ ] Intel Arc GPU support
-- [ ] macOS Metal GPU metrics
-- [ ] Real-time dashboard
-- [ ] Data export to InfluxDB/Prometheus
-- [ ] Mobile app for remote monitoring
-- [ ] Machine learning-based anomaly detection
+- **Python** 3.9+
+- **OS**: Windows 10/11, Linux, macOS
+- **Optional**: NVIDIA GPU for GPU metrics
 
 ---
 
-**Made with ❤️ by the OptiMetrics community**
+## License
+
+Apache License 2.0 - Use it, modify it, contribute back.
+
+---
+
+<div align="center">
+
+### Join Us
+
+**Every system is unique. Every contribution matters.**
+
+[![Star](https://img.shields.io/github/stars/Dex947/OptiMetrics?style=social)](https://github.com/Dex947/OptiMetrics)
+[![Fork](https://img.shields.io/github/forks/Dex947/OptiMetrics?style=social)](https://github.com/Dex947/OptiMetrics/fork)
+
+[Get Started](#quick-start) | [View Research Data](https://drive.google.com/drive/folders/1KLCQmnhgXTraQvVs0I60iut9scDMCMxr) | [Report Issues](https://github.com/Dex947/OptiMetrics/issues)
+
+**Built by researchers, for the community.**
+
+</div>
