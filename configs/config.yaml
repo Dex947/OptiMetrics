@@ -64,7 +64,7 @@ cloud:
   provider: "gdrive"
   
   # Upload frequency in minutes (incremental uploads)
-  upload_interval_minutes: 30
+  upload_interval_minutes: 5
   
   # Encrypt files before upload
   encrypt_before_upload: true

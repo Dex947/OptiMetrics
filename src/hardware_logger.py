@@ -507,10 +507,10 @@ class HardwareLogger:
             return
         
         cloud_config = self.config.get("cloud", {})
-        interval_minutes = cloud_config.get("upload_interval_minutes", 5)  # More frequent for incremental
+        interval_minutes = cloud_config.get("upload_interval_minutes", 5)  # Default 5 min for incremental
         
-        # Initial sync after startup delay
-        time.sleep(30)  # Wait 30 seconds before first sync
+        # Initial sync after short startup delay (let some data collect first)
+        time.sleep(10)  # Wait 10 seconds before first sync
         
         while self._running:
             try:
@@ -518,6 +518,8 @@ class HardwareLogger:
                 if synced:
                     total_rows = sum(synced.values())
                     logger.info(f"Synced {total_rows} rows to cloud ({len(synced)} files)")
+                else:
+                    logger.debug("No new data to sync")
             except Exception as e:
                 logger.error(f"Sync error: {e}")
             
